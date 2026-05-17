@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AI WhatsApp Agent — Demo</title>
+<meta name="viewport" content="width=1280" />
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #ffffff;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --slate: #334155;
+    --green: #25D366;
+    --green-soft: #DCF8C6;
+    --whatsapp-bg: #efeae2;
+    --amber: #f59e0b;
+    --blue: #2563eb;
+    --ai: #ede9fe;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: #e2e8f0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+  /* Stage = 1280x720, scales down */
+  .stage {
+    width: 1280px; height: 720px;
+    background: linear-gradient(135deg, #0b1224 0%, #1e293b 100%);
+    border-radius: 14px; overflow: hidden; position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  }
+
+  /* ====== TOP CAPTION ====== */
+  .caption {
+    position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    background: rgba(15,23,42,.85); backdrop-filter: blur(6px);
+    color: #fff; font-size: 16px; padding: 10px 20px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.08);
+    max-width: 86%; text-align: center;
+    transition: opacity .4s ease;
+    z-index: 50;
+  }
+
+  /* ====== TITLE OVERLAY ====== */
+  .overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(135deg, #0b1224 0%, #1e293b 100%);
+    z-index: 100; transition: opacity .8s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .overlay h1 { font-size: 56px; margin: 0 0 10px; letter-spacing: -.02em; }
+  .overlay .sub { color: #94a3b8; font-size: 20px; }
+  .overlay .url { margin-top: 30px; color: #38bdf8; font-family: ui-monospace, Menlo, monospace; font-size: 18px; }
+  .overlay .pill { display: inline-block; padding: 4px 12px; border-radius: 999px; background: rgba(56,189,248,.15); color: #38bdf8; font-size: 13px; margin-bottom: 18px; letter-spacing: .08em; text-transform: uppercase; }
+
+  /* ====== LAYOUT (phone + admin) ====== */
+  .split { display: grid; grid-template-columns: 380px 1fr; height: 100%; padding: 70px 24px 24px; gap: 20px; }
+
+  /* ====== PHONE ====== */
+  .phone {
+    background: #111; border-radius: 36px; padding: 14px; height: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    display: flex; flex-direction: column;
+  }
+  .phone-screen {
+    flex: 1; background: var(--whatsapp-bg); border-radius: 26px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone-header {
+    background: #075E54; color: white; padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .phone-header .avatar { width: 36px; height: 36px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+  .phone-header .name { font-weight: 600; font-size: 15px; }
+  .phone-header .status { font-size: 11px; opacity: .8; }
+  .phone-chat {
+    flex: 1; padding: 14px 12px; overflow-y: auto;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(0,0,0,.02) 1px, transparent 1px),
+      radial-gradient(circle at 80% 60%, rgba(0,0,0,.02) 1px, transparent 1px);
+  }
+  .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.45; color: #111; position: relative; word-wrap: break-word;
+    animation: msgIn .35s ease forwards; opacity: 0; transform: translateY(8px);
+  }
+  .msg.from-me { background: var(--green-soft); margin-left: auto; border-bottom-right-radius: 2px; }
+  .msg.from-them { background: #fff; margin-right: auto; border-bottom-left-radius: 2px; }
+  .msg .ts { display: block; font-size: 10px; color: #999; margin-top: 2px; text-align: right; }
+  @keyframes msgIn { to { opacity: 1; transform: translateY(0); } }
+  .typing {
+    background: #fff; padding: 8px 12px; border-radius: 14px; width: fit-content;
+    margin-bottom: 8px; opacity: 0; animation: msgIn .25s forwards;
+  }
+  .typing span { display: inline-block; width: 6px; height: 6px; margin: 0 1px; background: #999; border-radius: 50%; animation: blink 1s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+  /* ====== ADMIN ====== */
+  .admin {
+    background: var(--panel); color: #0f172a; border-radius: 14px; overflow: hidden;
+    display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  }
+  .admin-bar { background: #0f172a; color: #fff; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; }
+  .admin-bar .brand { font-weight: 600; font-size: 14px; }
+  .admin-tabs { display: flex; gap: 4px; }
+  .admin-tabs .tab { padding: 5px 10px; border-radius: 5px; font-size: 12px; color: #94a3b8; cursor: default; }
+  .admin-tabs .tab.active { background: #fff; color: #0f172a; }
+  .admin-body { flex: 1; padding: 18px; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Admin: conversation view */
+  .conv-view { display: grid; grid-template-columns: 220px 1fr; gap: 14px; height: 100%; }
+  .conv-list { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; overflow-y: auto; }
+  .conv-item { padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: default; }
+  .conv-item.active { background: #e2e8f0; }
+  .conv-item .who { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+  .conv-item .prev { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .badge { font-size: 9px; padding: 1px 6px; border-radius: 999px; background: #fef3c7; color: #92400e; letter-spacing: .03em; }
+
+  .conv-panel { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .conv-head { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: #fff; }
+  .conv-head .name { font-weight: 600; font-size: 13px; }
+  .conv-head .id { font-size: 11px; color: var(--muted); }
+  .conv-msgs { flex: 1; padding: 14px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+  .conv-msg { max-width: 75%; padding: 8px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; opacity: 0; transform: translateY(6px); animation: msgIn .3s ease forwards; }
+  .conv-msg.user { background: #f1f5f9; align-self: flex-start; }
+  .conv-msg.agent { background: #dcfce7; align-self: flex-end; }
+  .conv-msg.agent.ai { background: var(--ai); }
+  .conv-msg .meta { display: block; font-size: 9.5px; color: #6b7280; margin-top: 3px; }
+  .conv-input { padding: 10px; border-top: 1px solid var(--line); display: flex; gap: 6px; background: #fff; }
+  .conv-input .ph { flex: 1; background: #f8fafc; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: #94a3b8; }
+  .conv-input .ph.typing-text { color: #0f172a; }
+  .conv-input button { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; border: 0; }
+
+  /* Admin: rules view */
+  .rules-view { display: grid; grid-template-columns: 1fr 280px; gap: 14px; height: 100%; }
+  .rules-table { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .rules-table h3 { margin: 0; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--line); background: #f8fafc; }
+  .rules-table table { width: 100%; border-collapse: collapse; }
+  .rules-table th { font-size: 10px; color: var(--muted); text-align: left; padding: 7px 10px; background: #f8fafc; text-transform: uppercase; letter-spacing: .04em; }
+  .rules-table td { padding: 9px 10px; border-top: 1px solid var(--line); font-size: 12px; vertical-align: top; }
+  .rules-table td .rname { font-weight: 600; }
+  .rules-table td .ren { font-size: 9px; color: #16a34a; }
+  .rules-table .editing { background: #fffbeb; }
+  .rule-form { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+  .rule-form h3 { margin: 0 0 10px; font-size: 13px; }
+  .rule-form .field { margin-bottom: 8px; }
+  .rule-form label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .rule-form input, .rule-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; font-size: 11.5px; font-family: inherit; }
+  .rule-form textarea { resize: none; }
+
+  /* Admin: settings view */
+  .settings-view { display: flex; flex-direction: column; height: 100%; }
+  .settings-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 18px; max-width: 620px; }
+  .settings-card h3 { margin: 0 0 12px; font-size: 14px; }
+  .settings-card label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .settings-card .prompt-box { width: 100%; min-height: 140px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; line-height: 1.5; background: #fafafa; white-space: pre-wrap; }
+  .settings-card .toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12px; }
+  .settings-card .toggle .check { width: 14px; height: 14px; border: 1px solid var(--slate); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; background: #0f172a; color: #fff; font-size: 10px; }
+
+  /* Source tag */
+  .src-tag { display: inline-block; font-size: 9.5px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  .src-tag.rule { background: #dcfce7; color: #166534; }
+  .src-tag.ai   { background: #ede9fe; color: #5b21b6; }
+  .src-tag.human{ background: #fee2e2; color: #991b1b; }
+  .src-tag.handoff{ background: #fef3c7; color: #92400e; }
+
+  /* ====== HIGHLIGHT PULSE ====== */
+  .pulse { animation: pulse 1.2s ease 2; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+    50% { box-shadow: 0 0 0 6px rgba(37,99,235,.25); }
+  }
+
+  /* ====== CONTROLS ====== */
+  .controls {
+    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; align-items: center; z-index: 60;
+    background: rgba(15,23,42,.85); padding: 8px 16px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.08);
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .stage:hover .controls { opacity: 1; }
+  .controls button { background: transparent; border: 0; color: #fff; cursor: pointer; padding: 4px 10px; font-size: 13px; border-radius: 999px; }
+  .controls button:hover { background: rgba(255,255,255,.08); }
+  .progress { width: 200px; height: 4px; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; }
+  .progress .bar { height: 100%; background: #38bdf8; width: 0%; transition: width .3s linear; }
+  .scene-label { font-size: 11px; color: #94a3b8; }
+
+  /* Architecture mini-svg scene */
+  .arch-scene { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-top: 60px; }
+  .arch-scene svg { max-width: 90%; height: auto; }
+  .arch-scene .arch-title { color: #fff; font-size: 22px; margin-bottom: 16px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- TITLE OVERLAY -->
+  <div class="overlay" id="titleOverlay">
+    <div class="pill">2-minute demo · auto-plays</div>
+    <h1>AI WhatsApp Agent</h1>
+    <div class="sub">Customer support & automation · Meta Cloud API · OpenAI · React admin</div>
+    <div class="url">github.com/AKIO0413/ai-whatsapp-agent</div>
+  </div>
+
+  <!-- ARCHITECTURE OVERLAY -->
+  <div class="overlay hidden" id="archOverlay">
+    <div class="arch-scene">
+      <div class="arch-title">How it works</div>
+      <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/></marker></defs>
+        <g font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+          <rect x="20" y="100" width="140" height="70" rx="10" fill="#1e293b" stroke="#334155"/>
+          <text x="90" y="130" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">Customer</text>
+          <text x="90" y="150" text-anchor="middle" fill="#94a3b8" font-size="11">WhatsApp</text>
+
+          <rect x="200" y="100" width="160" height="70" rx="10" fill="#1e293b" stroke="#334155"/>
+          <text x="280" y="130" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">Meta Cloud API</text>
+          <text x="280" y="150" text-anchor="middle" fill="#94a3b8" font-size="11">webhook</text>
+
+          <rect x="400" y="100" width="200" height="70" rx="10" fill="#0f766e" stroke="#14b8a6"/>
+          <text x="500" y="130" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">Agent orchestrator</text>
+          <text x="500" y="150" text-anchor="middle" fill="#a7f3d0" font-size="11">handoff → rule → LLM</text>
+
+          <rect x="640" y="40" width="140" height="60" rx="10" fill="#1e293b" stroke="#334155"/>
+          <text x="710" y="65" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">OpenAI</text>
+          <text x="710" y="83" text-anchor="middle" fill="#94a3b8" font-size="11">gpt-4o-mini</text>
+
+          <rect x="640" y="120" width="140" height="60" rx="10" fill="#1e293b" stroke="#334155"/>
+          <text x="710" y="145" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">Rules + DB</text>
+          <text x="710" y="163" text-anchor="middle" fill="#94a3b8" font-size="11">lowdb (json)</text>
+
+          <rect x="640" y="200" width="140" height="60" rx="10" fill="#1e293b" stroke="#334155"/>
+          <text x="710" y="225" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">React Admin</text>
+          <text x="710" y="243" text-anchor="middle" fill="#94a3b8" font-size="11">operator UI</text>
+
+          <path d="M160 135 L200 135" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <path d="M360 135 L400 135" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <path d="M600 130 L640 80" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <path d="M600 140 L640 150" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <path d="M600 160 L640 220" stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- OUTRO OVERLAY -->
+  <div class="overlay hidden" id="outroOverlay">
+    <div class="pill">Production-ready prototype</div>
+    <h1>Ready to integrate</h1>
+    <div class="sub">Wire it to your Meta number, tune the prompt, deploy — under a week.</div>
+    <div class="url">github.com/AKIO0413/ai-whatsapp-agent</div>
+  </div>
+
+  <!-- MAIN STAGE -->
+  <div class="caption" id="caption">&nbsp;</div>
+
+  <div class="split">
+    <!-- PHONE -->
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="avatar">A</div>
+          <div>
+            <div class="name">ACME Support</div>
+            <div class="status">online</div>
+          </div>
+        </div>
+        <div class="phone-chat" id="phoneChat"></div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="admin">
+      <div class="admin-bar">
+        <div class="brand">AI WhatsApp Agent · Admin</div>
+        <div class="admin-tabs" id="adminTabs">
+          <span class="tab active" data-tab="conversations">Conversations</span>
+          <span class="tab" data-tab="rules">Auto-reply rules</span>
+          <span class="tab" data-tab="settings">Agent settings</span>
+        </div>
+      </div>
+      <div class="admin-body" id="adminBody">
+
+        <!-- View: conversations -->
+        <div class="conv-view" id="viewConversations">
+          <div class="conv-list" id="convList">
+            <div class="conv-item active" id="convItem">
+              <div class="who"><span>Test Customer</span><span id="convBadge" class="hidden"></span></div>
+              <div class="prev" id="convPrev">No messages yet</div>
+            </div>
+          </div>
+          <div class="conv-panel">
+            <div class="conv-head">
+              <div>
+                <div class="name">Test Customer</div>
+                <div class="id">+1 555 123 4567</div>
+              </div>
+              <div id="handoffBtn" style="font-size:11px;padding:3px 8px;border-radius:5px;background:#f1f5f9;color:#334155;">Auto-reply: ON</div>
+            </div>
+            <div class="conv-msgs" id="convMsgs"></div>
+            <div class="conv-input">
+              <div class="ph" id="convInput">Reply as human agent…</div>
+              <button>Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View: rules -->
+        <div class="rules-view hidden" id="viewRules">
+          <div class="rules-table">
+            <h3>Auto-reply rules</h3>
+            <table>
+              <thead><tr><th>Name</th><th>Keywords</th><th>Reply</th></tr></thead>
+              <tbody>
+                <tr id="ruleRowHours"><td><div class="rname">Business hours</div><div class="ren">enabled</div></td><td>hours, open, closing time</td><td>We're open Mon-Fri, 9:00–18:00 (JST)…</td></tr>
+                <tr><td><div class="rname">Pricing</div><div class="ren">enabled</div></td><td>price, pricing, cost</td><td>Our plans start from $29/month…</td></tr>
+                <tr><td><div class="rname">Refund policy</div><div class="ren">enabled</div></td><td>refund, return, money back</td><td>You can request a refund within 30 days…</td></tr>
+                <tr><td><div class="rname">Shipping</div><div class="ren">enabled</div></td><td>shipping, delivery, when arrive</td><td>Standard shipping is 3–5 business days…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="rule-form">
+            <h3>New rule</h3>
+            <div class="field"><label>Name</label><input value="Order status" /></div>
+            <div class="field"><label>Keywords</label><input value="order, tracking, where is my" /></div>
+            <div class="field"><label>Reply</label><textarea rows="3">Please share your order # and I'll look it up right away.</textarea></div>
+          </div>
+        </div>
+
+        <!-- View: settings -->
+        <div class="settings-view hidden" id="viewSettings">
+          <div class="settings-card">
+            <h3>Agent settings</h3>
+            <label>System prompt</label>
+            <div class="prompt-box">You are a friendly customer support agent for ACME Co.
+Answer briefly and warmly. If you do not know the answer,
+offer to connect the customer with a human agent.</div>
+            <div class="toggle"><span class="check">✓</span> Auto-reply enabled</div>
+            <label style="margin-top:14px;">Handoff keywords</label>
+            <div class="prompt-box" style="min-height:auto;">human, agent, representative, speak to someone</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button id="btnRestart">↺ Restart</button>
+    <button id="btnPlayPause">⏸ Pause</button>
+    <div class="progress"><div class="bar" id="progressBar"></div></div>
+    <div class="scene-label" id="sceneLabel">Loading…</div>
+  </div>
+</div>
+
+<script>
+  // ===========================================================
+  // Demo timeline driver
+  // ===========================================================
+  const TOTAL_MS = 120000;
+
+  // Helpers
+  const $ = (id) => document.getElementById(id);
+  const setCap = (text) => { $('caption').style.opacity = 0; setTimeout(() => { $('caption').innerHTML = text; $('caption').style.opacity = 1; }, 300); };
+  const setLabel = (s) => $('sceneLabel').textContent = s;
+
+  const phoneChat = $('phoneChat');
+  const convMsgs = $('convMsgs');
+  const convPrev = $('convPrev');
+  const convBadge = $('convBadge');
+  const convInput = $('convInput');
+  const handoffBtn = $('handoffBtn');
+
+  function tsNow() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  }
+  function phoneAdd(text, from) {
+    const div = document.createElement('div');
+    div.className = 'msg from-' + from;
+    div.innerHTML = text + '<span class="ts">' + tsNow() + '</span>';
+    phoneChat.appendChild(div);
+    phoneChat.scrollTop = phoneChat.scrollHeight;
+  }
+  function phoneTyping(on) {
+    const existing = phoneChat.querySelector('.typing');
+    if (on && !existing) {
+      const t = document.createElement('div'); t.className = 'typing';
+      t.innerHTML = '<span></span><span></span><span></span>';
+      phoneChat.appendChild(t);
+      phoneChat.scrollTop = phoneChat.scrollHeight;
+    } else if (!on && existing) {
+      existing.remove();
+    }
+  }
+  function convAdd(text, role, source) {
+    const div = document.createElement('div');
+    div.className = 'conv-msg ' + role + (source === 'ai' ? ' ai' : '');
+    let meta = '';
+    if (source) {
+      const cls = source === 'rule' ? 'rule' : source === 'ai' ? 'ai' : source === 'handoff' ? 'handoff' : 'human';
+      meta = '<span class="meta">' + tsNow() + ' <span class="src-tag ' + cls + '">' + source + '</span></span>';
+    } else {
+      meta = '<span class="meta">' + tsNow() + '</span>';
+    }
+    div.innerHTML = text + meta;
+    convMsgs.appendChild(div);
+    convMsgs.scrollTop = convMsgs.scrollHeight;
+    const trimmed = text.length > 36 ? text.slice(0, 36) + '…' : text;
+    convPrev.textContent = trimmed;
+  }
+  function setBadge(html) {
+    if (!html) { convBadge.classList.add('hidden'); convBadge.textContent = ''; return; }
+    convBadge.classList.remove('hidden'); convBadge.className = 'badge'; convBadge.innerHTML = html;
+  }
+  function showTab(name) {
+    document.querySelectorAll('#adminTabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    $('viewConversations').classList.toggle('hidden', name !== 'conversations');
+    $('viewRules').classList.toggle('hidden', name !== 'rules');
+    $('viewSettings').classList.toggle('hidden', name !== 'settings');
+  }
+  function pulse(el) {
+    if (!el) return;
+    el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+  }
+  function typeInto(el, text, durMs) {
+    el.classList.add('typing-text');
+    let i = 0;
+    el.textContent = '';
+    const step = Math.max(20, Math.floor(durMs / Math.max(1, text.length)));
+    const id = setInterval(() => {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) clearInterval(id);
+    }, step);
+  }
+
+  // ===========================================================
+  // Timeline of events
+  // (time in ms from start, action)
+  // ===========================================================
+  const timeline = [
+    // --- 0-5s: title ---
+    { at: 0,    do: () => { setLabel('Intro'); setCap('A 2-minute walkthrough of an AI customer-support agent for WhatsApp'); }},
+    { at: 5000, do: () => { $('titleOverlay').classList.add('hidden'); $('archOverlay').classList.remove('hidden'); setLabel('Architecture'); setCap('Inbound message → webhook → agent → reply (rule first, OpenAI fallback)'); }},
+    // --- 15s: enter main stage ---
+    { at: 15000, do: () => { $('archOverlay').classList.add('hidden'); setLabel('Scenario 1 · Rule match'); setCap('Scenario 1 — Customer asks an FAQ question'); }},
+
+    // --- Scenario 1: rule match (15-40s) ---
+    { at: 17000, do: () => phoneTyping(true) },
+    { at: 19500, do: () => { phoneTyping(false); phoneAdd('Hi! What are your business hours?', 'them'); convAdd('Hi! What are your business hours?', 'user'); }},
+    { at: 21000, do: () => { setCap('Keyword rule "Business hours" matches → instant reply, no LLM call'); showTab('rules'); pulse($('ruleRowHours')); $('ruleRowHours').classList.add('editing'); }},
+    { at: 25500, do: () => { showTab('conversations'); $('ruleRowHours').classList.remove('editing'); }},
+    { at: 26500, do: () => {
+        const reply = "We're open Mon-Fri, 9:00–18:00 (JST). Reach us anytime here on WhatsApp!";
+        phoneAdd(reply, 'me');
+        convAdd(reply, 'agent', 'rule');
+      }},
+    { at: 30000, do: () => setCap('Reply latency under 1 second · zero cost per reply') },
+
+    // --- Scenario 2: AI fallback (38-68s) ---
+    { at: 38000, do: () => { setLabel('Scenario 2 · AI fallback'); setCap('Scenario 2 — A question the rules don\'t cover'); }},
+    { at: 41000, do: () => phoneTyping(true) },
+    { at: 44000, do: () => { phoneTyping(false); phoneAdd('Do you ship to Japan? How long does it take?', 'them'); convAdd('Do you ship to Japan? How long does it take?', 'user'); }},
+    { at: 46000, do: () => setCap('No rule matches → fall through to OpenAI with the last 10 turns of context') },
+    { at: 48000, do: () => { convAdd('<em style="color:#5b21b6">thinking…</em>', 'agent', 'ai'); }},
+    { at: 51500, do: () => {
+        // remove the "thinking" placeholder
+        const last = convMsgs.lastChild; if (last) last.remove();
+        const reply = "Yes, we ship to Japan! Standard delivery is 5–7 business days via DHL, with full tracking. Express (2–3 days) is available at checkout. Want me to send the rate card?";
+        phoneAdd(reply, 'me');
+        convAdd(reply, 'agent', 'ai');
+      }},
+    { at: 55000, do: () => setCap('Persona, tone and escalation policy are all set via the system prompt') },
+    { at: 60000, do: () => { showTab('settings'); pulse(document.querySelector('.settings-card')); }},
+    { at: 65000, do: () => showTab('conversations') },
+
+    // --- Scenario 3: Handoff (68-100s) ---
+    { at: 68000, do: () => { setLabel('Scenario 3 · Human handoff'); setCap('Scenario 3 — Customer asks for a human'); }},
+    { at: 71000, do: () => phoneTyping(true) },
+    { at: 73500, do: () => { phoneTyping(false); phoneAdd('Hmm, can I speak to a human agent?', 'them'); convAdd('Hmm, can I speak to a human agent?', 'user'); }},
+    { at: 75500, do: () => {
+        setCap('Handoff keyword detected → AI auto-pauses, conversation flagged');
+        setBadge('HANDOFF');
+        handoffBtn.style.background = '#fef3c7'; handoffBtn.style.color = '#92400e'; handoffBtn.textContent = 'Hand off · operator';
+        pulse(handoffBtn);
+        const reply = 'Got it — connecting you with a human teammate. They will reply here shortly.';
+        phoneAdd(reply, 'me');
+        convAdd(reply, 'agent', 'handoff');
+      }},
+    { at: 81000, do: () => setCap('Operator takes over from the admin console — same channel, no seam for the customer') },
+    { at: 83000, do: () => typeInto(convInput, 'Hi! This is Mei from support. Happy to help personally — what would you like to ask?', 4500) },
+    { at: 88500, do: () => {
+        const reply = 'Hi! This is Mei from support. Happy to help personally — what would you like to ask?';
+        phoneAdd(reply, 'me');
+        convAdd(reply, 'agent', 'human');
+        convInput.textContent = 'Reply as human agent…'; convInput.classList.remove('typing-text');
+      }},
+
+    // --- Admin tour (95-110s) ---
+    { at: 95000, do: () => { setLabel('Admin console tour'); setCap('Non-technical staff manage everything from the admin console'); showTab('rules'); }},
+    { at: 100000, do: () => { setCap('Rules · system prompt · handoff config · all editable without code'); showTab('settings'); }},
+    { at: 106000, do: () => { showTab('conversations'); }},
+
+    // --- Outro (110-120s) ---
+    { at: 110000, do: () => { setLabel('Outro'); setCap('&nbsp;'); $('outroOverlay').classList.remove('hidden'); }},
+    { at: 119500, do: () => { /* reached end */ }}
+  ];
+
+  // ===========================================================
+  // Player
+  // ===========================================================
+  let startTs = null;
+  let paused = false;
+  let pauseAt = 0;
+  let firedIdx = 0;
+  let raf;
+
+  function resetAll() {
+    phoneChat.innerHTML = '';
+    convMsgs.innerHTML = '';
+    convPrev.textContent = 'No messages yet';
+    setBadge('');
+    handoffBtn.style.background = '#f1f5f9'; handoffBtn.style.color = '#334155'; handoffBtn.textContent = 'Auto-reply: ON';
+    convInput.textContent = 'Reply as human agent…'; convInput.classList.remove('typing-text');
+    showTab('conversations');
+    $('titleOverlay').classList.remove('hidden');
+    $('archOverlay').classList.add('hidden');
+    $('outroOverlay').classList.add('hidden');
+    setCap('&nbsp;');
+    firedIdx = 0;
+    startTs = performance.now();
+    pauseAt = 0;
+    paused = false;
+    $('btnPlayPause').textContent = '⏸ Pause';
+  }
+
+  function tick(now) {
+    if (!paused) {
+      const elapsed = now - startTs;
+      $('progressBar').style.width = Math.min(100, (elapsed / TOTAL_MS) * 100) + '%';
+      while (firedIdx < timeline.length && timeline[firedIdx].at <= elapsed) {
+        try { timeline[firedIdx].do(); } catch(e) { console.error(e); }
+        firedIdx++;
+      }
+      if (elapsed >= TOTAL_MS) {
+        // End: hold outro for a bit then loop after long pause
+        return;
+      }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  $('btnRestart').addEventListener('click', () => { cancelAnimationFrame(raf); resetAll(); raf = requestAnimationFrame(tick); });
+  $('btnPlayPause').addEventListener('click', () => {
+    if (paused) { startTs += performance.now() - pauseAt; paused = false; $('btnPlayPause').textContent = '⏸ Pause'; }
+    else { paused = true; pauseAt = performance.now(); $('btnPlayPause').textContent = '▶ Play'; }
+  });
+
+  // Kick off
+  resetAll();
+  raf = requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
