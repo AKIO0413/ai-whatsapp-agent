@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" font-family="-apple-system,Segoe UI,Roboto,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="560" fill="#ffffff"/>
+
+  <text x="40" y="36" font-size="18" font-weight="600" fill="#0f172a">AI WhatsApp Agent — Architecture</text>
+  <text x="40" y="56" font-size="11" fill="#64748b">Customer support &amp; automation prototype · Node.js + React + Meta Cloud API + OpenAI</text>
+
+  <!-- Customer -->
+  <rect x="40" y="100" width="170" height="80" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="125" y="130" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Customer</text>
+  <text x="125" y="150" text-anchor="middle" font-size="12" fill="#334155">WhatsApp app</text>
+  <text x="125" y="166" text-anchor="middle" font-size="11" fill="#64748b">sends/receives text</text>
+
+  <!-- Meta Cloud API -->
+  <rect x="280" y="100" width="200" height="80" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="380" y="130" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Meta WhatsApp Cloud API</text>
+  <text x="380" y="150" text-anchor="middle" font-size="12" fill="#334155">Webhook + Send Messages</text>
+  <text x="380" y="166" text-anchor="middle" font-size="11" fill="#64748b">graph.facebook.com</text>
+
+  <!-- Server group -->
+  <rect x="540" y="80" width="400" height="320" rx="12" ry="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="560" y="105" font-size="12" font-weight="600" fill="#475569" letter-spacing="0.04em">NODE.JS SERVER (Express)</text>
+
+  <rect x="560" y="120" width="170" height="60" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="645" y="142" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">/webhook</text>
+  <text x="645" y="160" text-anchor="middle" font-size="11" fill="#64748b">verify + receive inbound</text>
+
+  <rect x="750" y="120" width="170" height="60" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="835" y="142" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">/api/*</text>
+  <text x="835" y="160" text-anchor="middle" font-size="11" fill="#64748b">conversations · rules · settings</text>
+
+  <rect x="560" y="200" width="360" height="80" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="740" y="226" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">Agent orchestrator</text>
+  <text x="740" y="246" text-anchor="middle" font-size="12" fill="#334155">1. handoff check · 2. rule match · 3. LLM fallback</text>
+  <text x="740" y="264" text-anchor="middle" font-size="11" fill="#64748b">persists conversation + chosen reply source</text>
+
+  <rect x="560" y="300" width="170" height="70" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="645" y="324" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">OpenAI client</text>
+  <text x="645" y="344" text-anchor="middle" font-size="11" fill="#64748b">chat.completions</text>
+  <text x="645" y="360" text-anchor="middle" font-size="11" fill="#64748b">model: gpt-4o-mini</text>
+
+  <rect x="750" y="300" width="170" height="70" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="835" y="324" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">lowdb (JSON)</text>
+  <text x="835" y="344" text-anchor="middle" font-size="11" fill="#64748b">data/db.json</text>
+  <text x="835" y="360" text-anchor="middle" font-size="11" fill="#64748b">conversations · rules · settings</text>
+
+  <!-- Admin -->
+  <rect x="40" y="340" width="200" height="80" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="140" y="368" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">React Admin (Vite)</text>
+  <text x="140" y="388" text-anchor="middle" font-size="12" fill="#334155">Conversations · Rules · Settings</text>
+  <text x="140" y="404" text-anchor="middle" font-size="11" fill="#64748b">localhost:5173</text>
+
+  <!-- OpenAI external -->
+  <rect x="40" y="240" width="200" height="60" rx="10" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="140" y="262" text-anchor="middle" font-size="14" font-weight="600" fill="#0f172a">OpenAI API</text>
+  <text x="140" y="280" text-anchor="middle" font-size="11" fill="#64748b">api.openai.com</text>
+
+  <!-- Edges -->
+  <path d="M210 130 L280 130" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M280 155 L210 155" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <path d="M480 130 L560 145" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="495" y="118" font-size="11" fill="#64748b">POST inbound</text>
+
+  <path d="M560 165 L480 155" fill="none" stroke="#475569" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="490" y="186" font-size="11" fill="#64748b">send reply</text>
+
+  <path d="M645 180 L645 200" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <path d="M240 360 C 420 360, 520 220, 750 165" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="430" y="328" font-size="11" fill="#64748b">fetch /api (Basic Auth)</text>
+
+  <path d="M835 180 L835 200" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <path d="M680 280 L660 300" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M800 280 L820 300" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <path d="M560 335 C 400 335, 320 285, 240 275" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <text x="40" y="500" font-size="12" font-weight="600" fill="#475569" letter-spacing="0.04em">FLOW</text>
+  <text x="40" y="520" font-size="12" fill="#334155">1) Customer message → Meta → /webhook  · 2) Agent: handoff? → rule match? → OpenAI fallback</text>
+  <text x="40" y="538" font-size="12" fill="#334155">3) Reply persisted in lowdb + sent back via Cloud API  · 4) Human operator monitors / takes over in React Admin</text>
+</svg>

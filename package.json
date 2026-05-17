@@ -1,0 +1,17 @@
+{
+  "name": "ai-whatsapp-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered customer support agent for WhatsApp (Meta Cloud API) with OpenAI and a React admin console.",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix admin install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "build:admin": "npm --prefix admin run build",
+    "start": "npm --prefix server start"
+  },
+  "workspaces": [
+    "server",
+    "admin"
+  ]
+}
