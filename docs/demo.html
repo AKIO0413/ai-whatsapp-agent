@@ -188,9 +188,9 @@
   .scene-label { font-size: 11px; color: #94a3b8; }
 
   /* Architecture mini-svg scene */
-  .arch-scene { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-top: 60px; }
-  .arch-scene svg { max-width: 90%; height: auto; }
-  .arch-scene .arch-title { color: #fff; font-size: 22px; margin-bottom: 16px; }
+  .arch-scene { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 80px 50px 40px; }
+  .arch-scene svg { width: 100%; max-width: 1100px; height: auto; display: block; }
+  .arch-scene .arch-title { color: #fff; font-size: 32px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.01em; }
 
   .hidden { display: none !important; }
 </style>
@@ -201,7 +201,7 @@
 
   <!-- TITLE OVERLAY -->
   <div class="overlay" id="titleOverlay">
-    <div class="pill">2-minute demo · auto-plays</div>
+    <div class="pill">80-second demo · auto-plays</div>
     <h1>AI WhatsApp Agent</h1>
     <div class="sub">Customer support & automation · Meta Cloud API · OpenAI · React admin</div>
     <div class="url">github.com/AKIO0413/ai-whatsapp-agent</div>
@@ -211,7 +211,7 @@
   <div class="overlay hidden" id="archOverlay">
     <div class="arch-scene">
       <div class="arch-title">How it works</div>
-      <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 900 280" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
         <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/></marker></defs>
         <g font-family="-apple-system,Segoe UI,Roboto,sans-serif">
           <rect x="20" y="100" width="140" height="70" rx="10" fill="#1e293b" stroke="#334155"/>
@@ -363,7 +363,7 @@ offer to connect the customer with a human agent.</div>
   // ===========================================================
   // Demo timeline driver
   // ===========================================================
-  const TOTAL_MS = 120000;
+  const TOTAL_MS = 80000;
 
   // Helpers
   const $ = (id) => document.getElementById(id);
@@ -445,47 +445,49 @@ offer to connect the customer with a human agent.</div>
   // (time in ms from start, action)
   // ===========================================================
   const timeline = [
-    // --- 0-5s: title ---
-    { at: 0,    do: () => { setLabel('Intro'); setCap('A 2-minute walkthrough of an AI customer-support agent for WhatsApp'); }},
-    { at: 5000, do: () => { $('titleOverlay').classList.add('hidden'); $('archOverlay').classList.remove('hidden'); setLabel('Architecture'); setCap('Inbound message → webhook → agent → reply (rule first, OpenAI fallback)'); }},
-    // --- 15s: enter main stage ---
-    { at: 15000, do: () => { $('archOverlay').classList.add('hidden'); setLabel('Scenario 1 · Rule match'); setCap('Scenario 1 — Customer asks an FAQ question'); }},
+    // --- Title (0-3s) ---
+    { at: 0,    do: () => { setLabel('Intro'); setCap('A quick demo of an AI customer-support agent for WhatsApp'); }},
 
-    // --- Scenario 1: rule match (15-40s) ---
-    { at: 17000, do: () => phoneTyping(true) },
-    { at: 19500, do: () => { phoneTyping(false); phoneAdd('Hi! What are your business hours?', 'them'); convAdd('Hi! What are your business hours?', 'user'); }},
-    { at: 21000, do: () => { setCap('Keyword rule "Business hours" matches → instant reply, no LLM call'); showTab('rules'); pulse($('ruleRowHours')); $('ruleRowHours').classList.add('editing'); }},
-    { at: 25500, do: () => { showTab('conversations'); $('ruleRowHours').classList.remove('editing'); }},
-    { at: 26500, do: () => {
-        const reply = "We're open Mon-Fri, 9:00–18:00 (JST). Reach us anytime here on WhatsApp!";
+    // --- Architecture (3-9s) ---
+    { at: 3000, do: () => { $('titleOverlay').classList.add('hidden'); $('archOverlay').classList.remove('hidden'); setLabel('Architecture'); setCap('Inbound → webhook → agent (rule first, OpenAI fallback) → reply'); }},
+
+    // --- Enter main stage (9s) ---
+    { at: 9000, do: () => { $('archOverlay').classList.add('hidden'); setLabel('Scenario 1 · Rule match'); setCap('Scenario 1 — Customer asks an FAQ question'); }},
+
+    // --- Scenario 1: rule match (9-24s) ---
+    { at: 10500, do: () => phoneTyping(true) },
+    { at: 12500, do: () => { phoneTyping(false); phoneAdd('Hi! What are your business hours?', 'them'); convAdd('Hi! What are your business hours?', 'user'); }},
+    { at: 13800, do: () => { setCap('Keyword rule matches → instant reply, no LLM call'); showTab('rules'); pulse($('ruleRowHours')); $('ruleRowHours').classList.add('editing'); }},
+    { at: 17000, do: () => { showTab('conversations'); $('ruleRowHours').classList.remove('editing'); }},
+    { at: 17800, do: () => {
+        const reply = "We're open Mon–Fri, 9:00–18:00 (JST). Reach us anytime here on WhatsApp!";
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'rule');
       }},
-    { at: 30000, do: () => setCap('Reply latency under 1 second · zero cost per reply') },
+    { at: 20500, do: () => setCap('Under 1 second · zero cost per reply') },
 
-    // --- Scenario 2: AI fallback (38-68s) ---
-    { at: 38000, do: () => { setLabel('Scenario 2 · AI fallback'); setCap('Scenario 2 — A question the rules don\'t cover'); }},
-    { at: 41000, do: () => phoneTyping(true) },
-    { at: 44000, do: () => { phoneTyping(false); phoneAdd('Do you ship to Japan? How long does it take?', 'them'); convAdd('Do you ship to Japan? How long does it take?', 'user'); }},
-    { at: 46000, do: () => setCap('No rule matches → fall through to OpenAI with the last 10 turns of context') },
-    { at: 48000, do: () => { convAdd('<em style="color:#5b21b6">thinking…</em>', 'agent', 'ai'); }},
-    { at: 51500, do: () => {
-        // remove the "thinking" placeholder
+    // --- Scenario 2: AI fallback (24-43s) ---
+    { at: 24000, do: () => { setLabel('Scenario 2 · AI fallback'); setCap('Scenario 2 — A question rules don\'t cover'); }},
+    { at: 26000, do: () => phoneTyping(true) },
+    { at: 28200, do: () => { phoneTyping(false); phoneAdd('Do you ship to Japan? How long does it take?', 'them'); convAdd('Do you ship to Japan? How long does it take?', 'user'); }},
+    { at: 29500, do: () => setCap('No rule → OpenAI fallback with the last 10 turns of context') },
+    { at: 30500, do: () => { convAdd('<em style="color:#5b21b6">thinking…</em>', 'agent', 'ai'); }},
+    { at: 33000, do: () => {
         const last = convMsgs.lastChild; if (last) last.remove();
-        const reply = "Yes, we ship to Japan! Standard delivery is 5–7 business days via DHL, with full tracking. Express (2–3 days) is available at checkout. Want me to send the rate card?";
+        const reply = "Yes, we ship to Japan! Standard delivery is 5–7 business days via DHL with tracking. Express (2–3 days) is also available. Want me to send the rate card?";
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'ai');
       }},
-    { at: 55000, do: () => setCap('Persona, tone and escalation policy are all set via the system prompt') },
-    { at: 60000, do: () => { showTab('settings'); pulse(document.querySelector('.settings-card')); }},
-    { at: 65000, do: () => showTab('conversations') },
+    { at: 36500, do: () => setCap('Persona, tone and escalation policy come from the system prompt') },
+    { at: 38500, do: () => { showTab('settings'); pulse(document.querySelector('.settings-card')); }},
+    { at: 42500, do: () => showTab('conversations') },
 
-    // --- Scenario 3: Handoff (68-100s) ---
-    { at: 68000, do: () => { setLabel('Scenario 3 · Human handoff'); setCap('Scenario 3 — Customer asks for a human'); }},
-    { at: 71000, do: () => phoneTyping(true) },
-    { at: 73500, do: () => { phoneTyping(false); phoneAdd('Hmm, can I speak to a human agent?', 'them'); convAdd('Hmm, can I speak to a human agent?', 'user'); }},
-    { at: 75500, do: () => {
-        setCap('Handoff keyword detected → AI auto-pauses, conversation flagged');
+    // --- Scenario 3: Handoff (43-65s) ---
+    { at: 43500, do: () => { setLabel('Scenario 3 · Human handoff'); setCap('Scenario 3 — Customer wants a human'); }},
+    { at: 45500, do: () => phoneTyping(true) },
+    { at: 47800, do: () => { phoneTyping(false); phoneAdd('Hmm, can I speak to a human agent?', 'them'); convAdd('Hmm, can I speak to a human agent?', 'user'); }},
+    { at: 49500, do: () => {
+        setCap('Handoff keyword → AI auto-pauses, conversation flagged');
         setBadge('HANDOFF');
         handoffBtn.style.background = '#fef3c7'; handoffBtn.style.color = '#92400e'; handoffBtn.textContent = 'Hand off · operator';
         pulse(handoffBtn);
@@ -493,23 +495,23 @@ offer to connect the customer with a human agent.</div>
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'handoff');
       }},
-    { at: 81000, do: () => setCap('Operator takes over from the admin console — same channel, no seam for the customer') },
-    { at: 83000, do: () => typeInto(convInput, 'Hi! This is Mei from support. Happy to help personally — what would you like to ask?', 4500) },
-    { at: 88500, do: () => {
-        const reply = 'Hi! This is Mei from support. Happy to help personally — what would you like to ask?';
+    { at: 54000, do: () => setCap('Operator takes over from the admin — same channel, no seam') },
+    { at: 55500, do: () => typeInto(convInput, 'Hi! This is Mei from support. Happy to help — what would you like to ask?', 3500) },
+    { at: 60000, do: () => {
+        const reply = 'Hi! This is Mei from support. Happy to help — what would you like to ask?';
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'human');
         convInput.textContent = 'Reply as human agent…'; convInput.classList.remove('typing-text');
       }},
 
-    // --- Admin tour (95-110s) ---
-    { at: 95000, do: () => { setLabel('Admin console tour'); setCap('Non-technical staff manage everything from the admin console'); showTab('rules'); }},
-    { at: 100000, do: () => { setCap('Rules · system prompt · handoff config · all editable without code'); showTab('settings'); }},
-    { at: 106000, do: () => { showTab('conversations'); }},
+    // --- Admin tour (64-73s) ---
+    { at: 64000, do: () => { setLabel('Admin console'); setCap('Rules, prompt, handoff config — all editable without code'); showTab('rules'); }},
+    { at: 68500, do: () => { setCap('Same goes for the system prompt — change tone or escalation in seconds'); showTab('settings'); }},
+    { at: 73000, do: () => { showTab('conversations'); }},
 
-    // --- Outro (110-120s) ---
-    { at: 110000, do: () => { setLabel('Outro'); setCap('&nbsp;'); $('outroOverlay').classList.remove('hidden'); }},
-    { at: 119500, do: () => { /* reached end */ }}
+    // --- Outro (73-80s) ---
+    { at: 73500, do: () => { setLabel('Outro'); setCap('&nbsp;'); $('outroOverlay').classList.remove('hidden'); }},
+    { at: 79500, do: () => { /* reached end */ }}
   ];
 
   // ===========================================================
@@ -569,3 +571,4 @@ offer to connect the customer with a human agent.</div>
 
 </body>
 </html>
+                     
