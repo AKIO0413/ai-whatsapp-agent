@@ -30,15 +30,27 @@
     box-shadow: 0 30px 80px rgba(0,0,0,.5);
   }
 
-  /* ====== TOP CAPTION ====== */
-  .caption {
+  /* ====== SCENE BADGE (top) ====== */
+  .scene-badge {
     position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
     background: rgba(15,23,42,.85); backdrop-filter: blur(6px);
-    color: #fff; font-size: 16px; padding: 10px 20px; border-radius: 999px;
+    color: #94a3b8; font-size: 11px; padding: 5px 14px; border-radius: 999px;
     border: 1px solid rgba(255,255,255,.08);
-    max-width: 86%; text-align: center;
+    text-transform: uppercase; letter-spacing: .12em; font-weight: 600;
     transition: opacity .4s ease;
     z-index: 50;
+  }
+  /* ====== SUBTITLE (bottom — movie/youtube style) ====== */
+  .caption {
+    position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.78); backdrop-filter: blur(6px);
+    color: #fff; font-size: 17px; font-weight: 500; line-height: 1.4;
+    padding: 10px 22px; border-radius: 6px;
+    max-width: 78%; text-align: center;
+    transition: opacity .35s ease;
+    z-index: 50;
+    letter-spacing: -.005em;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
   }
 
   /* ====== TITLE OVERLAY ====== */
@@ -257,6 +269,7 @@
   </div>
 
   <!-- MAIN STAGE -->
+  <div class="scene-badge" id="sceneBadge">Intro</div>
   <div class="caption" id="caption">&nbsp;</div>
 
   <div class="split">
@@ -368,7 +381,7 @@ offer to connect the customer with a human agent.</div>
   // Helpers
   const $ = (id) => document.getElementById(id);
   const setCap = (text) => { $('caption').style.opacity = 0; setTimeout(() => { $('caption').innerHTML = text; $('caption').style.opacity = 1; }, 300); };
-  const setLabel = (s) => $('sceneLabel').textContent = s;
+  const setLabel = (s) => { $('sceneLabel').textContent = s; $('sceneBadge').textContent = s; };
 
   const phoneChat = $('phoneChat');
   const convMsgs = $('convMsgs');
@@ -446,48 +459,52 @@ offer to connect the customer with a human agent.</div>
   // ===========================================================
   const timeline = [
     // --- Title (0-3s) ---
-    { at: 0,    do: () => { setLabel('Intro'); setCap('A quick demo of an AI customer-support agent for WhatsApp'); }},
+    { at: 0,    do: () => { setLabel('Intro'); setCap('A quick walkthrough of an AI-powered customer support agent for WhatsApp'); }},
 
     // --- Architecture (3-9s) ---
-    { at: 3000, do: () => { $('titleOverlay').classList.add('hidden'); $('archOverlay').classList.remove('hidden'); setLabel('Architecture'); setCap('Inbound → webhook → agent (rule first, OpenAI fallback) → reply'); }},
+    { at: 3000, do: () => { $('titleOverlay').classList.add('hidden'); $('archOverlay').classList.remove('hidden'); setLabel('Architecture'); setCap('Inbound WhatsApp messages arrive through Meta\'s Cloud API webhook'); }},
+    { at: 6000, do: () => setCap('The agent runs three steps: handoff check → keyword rule → OpenAI fallback') },
 
     // --- Enter main stage (9s) ---
-    { at: 9000, do: () => { $('archOverlay').classList.add('hidden'); setLabel('Scenario 1 · Rule match'); setCap('Scenario 1 — Customer asks an FAQ question'); }},
+    { at: 9000, do: () => { $('archOverlay').classList.add('hidden'); setLabel('Scenario 1 · Rule match'); setCap('On the left: the customer\'s WhatsApp. On the right: the admin console operators use'); }},
 
     // --- Scenario 1: rule match (9-24s) ---
-    { at: 10500, do: () => phoneTyping(true) },
+    { at: 11500, do: () => { phoneTyping(true); setCap('The customer types a common FAQ — business hours'); }},
     { at: 12500, do: () => { phoneTyping(false); phoneAdd('Hi! What are your business hours?', 'them'); convAdd('Hi! What are your business hours?', 'user'); }},
-    { at: 13800, do: () => { setCap('Keyword rule matches → instant reply, no LLM call'); showTab('rules'); pulse($('ruleRowHours')); $('ruleRowHours').classList.add('editing'); }},
-    { at: 17000, do: () => { showTab('conversations'); $('ruleRowHours').classList.remove('editing'); }},
+    { at: 13200, do: () => setCap('Message arrives at the webhook and appears in the admin in real time') },
+    { at: 14200, do: () => { showTab('rules'); pulse($('ruleRowHours')); $('ruleRowHours').classList.add('editing'); setCap('The agent finds a keyword rule called "Business hours" and uses its reply'); }},
+    { at: 17000, do: () => { showTab('conversations'); $('ruleRowHours').classList.remove('editing'); setCap('No OpenAI call needed — the canned answer goes out instantly'); }},
     { at: 17800, do: () => {
         const reply = "We're open Mon–Fri, 9:00–18:00 (JST). Reach us anytime here on WhatsApp!";
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'rule');
       }},
-    { at: 20500, do: () => setCap('Under 1 second · zero cost per reply') },
+    { at: 20500, do: () => setCap('Reply latency under 1 second · zero LLM cost · tagged "rule" in the log') },
 
     // --- Scenario 2: AI fallback (24-43s) ---
-    { at: 24000, do: () => { setLabel('Scenario 2 · AI fallback'); setCap('Scenario 2 — A question rules don\'t cover'); }},
-    { at: 26000, do: () => phoneTyping(true) },
+    { at: 24000, do: () => { setLabel('Scenario 2 · OpenAI fallback'); setCap('Now a question that no rule covers — international shipping'); }},
+    { at: 26000, do: () => { phoneTyping(true); setCap('Customer types again…'); }},
     { at: 28200, do: () => { phoneTyping(false); phoneAdd('Do you ship to Japan? How long does it take?', 'them'); convAdd('Do you ship to Japan? How long does it take?', 'user'); }},
-    { at: 29500, do: () => setCap('No rule → OpenAI fallback with the last 10 turns of context') },
-    { at: 30500, do: () => { convAdd('<em style="color:#5b21b6">thinking…</em>', 'agent', 'ai'); }},
+    { at: 29200, do: () => setCap('No keyword rule matches this message') },
+    { at: 30200, do: () => { convAdd('<em style="color:#5b21b6">thinking…</em>', 'agent', 'ai'); setCap('The agent falls back to OpenAI, sending the last 10 turns as context'); }},
     { at: 33000, do: () => {
         const last = convMsgs.lastChild; if (last) last.remove();
         const reply = "Yes, we ship to Japan! Standard delivery is 5–7 business days via DHL with tracking. Express (2–3 days) is also available. Want me to send the rate card?";
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'ai');
+        setCap('GPT-4o-mini returns a tone-matched reply — tagged "ai" in the log');
       }},
-    { at: 36500, do: () => setCap('Persona, tone and escalation policy come from the system prompt') },
-    { at: 38500, do: () => { showTab('settings'); pulse(document.querySelector('.settings-card')); }},
-    { at: 42500, do: () => showTab('conversations') },
+    { at: 37000, do: () => { showTab('settings'); pulse(document.querySelector('.settings-card')); setCap('Persona, tone and escalation are all controlled by this system prompt'); }},
+    { at: 41000, do: () => setCap('Edit it here, save, and the next reply uses the new instructions — no code change') },
+    { at: 43000, do: () => showTab('conversations') },
 
     // --- Scenario 3: Handoff (43-65s) ---
-    { at: 43500, do: () => { setLabel('Scenario 3 · Human handoff'); setCap('Scenario 3 — Customer wants a human'); }},
-    { at: 45500, do: () => phoneTyping(true) },
+    { at: 44000, do: () => { setLabel('Scenario 3 · Human handoff'); setCap('Last scenario — the customer wants to talk to a real person'); }},
+    { at: 46000, do: () => { phoneTyping(true); setCap('Customer typing…'); }},
     { at: 47800, do: () => { phoneTyping(false); phoneAdd('Hmm, can I speak to a human agent?', 'them'); convAdd('Hmm, can I speak to a human agent?', 'user'); }},
-    { at: 49500, do: () => {
-        setCap('Handoff keyword → AI auto-pauses, conversation flagged');
+    { at: 48800, do: () => setCap('The message contains the word "human" — a configured handoff keyword') },
+    { at: 50000, do: () => {
+        setCap('The AI auto-pauses. The conversation is flagged HANDOFF for the team');
         setBadge('HANDOFF');
         handoffBtn.style.background = '#fef3c7'; handoffBtn.style.color = '#92400e'; handoffBtn.textContent = 'Hand off · operator';
         pulse(handoffBtn);
@@ -495,80 +512,26 @@ offer to connect the customer with a human agent.</div>
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'handoff');
       }},
-    { at: 54000, do: () => setCap('Operator takes over from the admin — same channel, no seam') },
-    { at: 55500, do: () => typeInto(convInput, 'Hi! This is Mei from support. Happy to help — what would you like to ask?', 3500) },
+    { at: 53500, do: () => setCap('A short holding message goes out so the customer knows help is coming') },
+    { at: 55500, do: () => { typeInto(convInput, 'Hi! This is Mei from support. Happy to help — what would you like to ask?', 3500); setCap('An operator picks up the conversation right from the admin console'); }},
     { at: 60000, do: () => {
         const reply = 'Hi! This is Mei from support. Happy to help — what would you like to ask?';
         phoneAdd(reply, 'me');
         convAdd(reply, 'agent', 'human');
         convInput.textContent = 'Reply as human agent…'; convInput.classList.remove('typing-text');
+        setCap('The reply goes out via the same WhatsApp number — seamless for the customer');
       }},
 
     // --- Admin tour (64-73s) ---
-    { at: 64000, do: () => { setLabel('Admin console'); setCap('Rules, prompt, handoff config — all editable without code'); showTab('rules'); }},
-    { at: 68500, do: () => { setCap('Same goes for the system prompt — change tone or escalation in seconds'); showTab('settings'); }},
-    { at: 73000, do: () => { showTab('conversations'); }},
+    { at: 64000, do: () => { setLabel('Admin console'); setCap('Anyone on your team can add or edit auto-reply rules — no coding required'); showTab('rules'); }},
+    { at: 68500, do: () => { setCap('Same for the system prompt and handoff keywords — change tone or policy in seconds'); showTab('settings'); }},
+    { at: 73000, do: () => { showTab('conversations'); setCap('All changes apply to the very next incoming message'); }},
 
     // --- Outro (73-80s) ---
-    { at: 73500, do: () => { setLabel('Outro'); setCap('&nbsp;'); $('outroOverlay').classList.remove('hidden'); }},
+    { at: 74500, do: () => { setLabel('Outro'); setCap('&nbsp;'); $('outroOverlay').classList.remove('hidden'); }},
     { at: 79500, do: () => { /* reached end */ }}
   ];
 
   // ===========================================================
   // Player
-  // ===========================================================
-  let startTs = null;
-  let paused = false;
-  let pauseAt = 0;
-  let firedIdx = 0;
-  let raf;
-
-  function resetAll() {
-    phoneChat.innerHTML = '';
-    convMsgs.innerHTML = '';
-    convPrev.textContent = 'No messages yet';
-    setBadge('');
-    handoffBtn.style.background = '#f1f5f9'; handoffBtn.style.color = '#334155'; handoffBtn.textContent = 'Auto-reply: ON';
-    convInput.textContent = 'Reply as human agent…'; convInput.classList.remove('typing-text');
-    showTab('conversations');
-    $('titleOverlay').classList.remove('hidden');
-    $('archOverlay').classList.add('hidden');
-    $('outroOverlay').classList.add('hidden');
-    setCap('&nbsp;');
-    firedIdx = 0;
-    startTs = performance.now();
-    pauseAt = 0;
-    paused = false;
-    $('btnPlayPause').textContent = '⏸ Pause';
-  }
-
-  function tick(now) {
-    if (!paused) {
-      const elapsed = now - startTs;
-      $('progressBar').style.width = Math.min(100, (elapsed / TOTAL_MS) * 100) + '%';
-      while (firedIdx < timeline.length && timeline[firedIdx].at <= elapsed) {
-        try { timeline[firedIdx].do(); } catch(e) { console.error(e); }
-        firedIdx++;
-      }
-      if (elapsed >= TOTAL_MS) {
-        // End: hold outro for a bit then loop after long pause
-        return;
-      }
-    }
-    raf = requestAnimationFrame(tick);
-  }
-
-  $('btnRestart').addEventListener('click', () => { cancelAnimationFrame(raf); resetAll(); raf = requestAnimationFrame(tick); });
-  $('btnPlayPause').addEventListener('click', () => {
-    if (paused) { startTs += performance.now() - pauseAt; paused = false; $('btnPlayPause').textContent = '⏸ Pause'; }
-    else { paused = true; pauseAt = performance.now(); $('btnPlayPause').textContent = '▶ Play'; }
-  });
-
-  // Kick off
-  resetAll();
-  raf = requestAnimationFrame(tick);
-</script>
-
-</body>
-</html>
-                     
+  // ===========================
